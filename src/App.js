@@ -5,6 +5,7 @@ import {
   sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
+  updateProfile,
 } from "firebase/auth";
 import app from "./firebase.init";
 import { Button, Container, Form, InputGroup } from "react-bootstrap";
@@ -15,9 +16,11 @@ const auth = getAuth(app);
 function App() {
   const [Registered, setRegistered] = useState(false);
   const [validated, setValidated] = useState(false);
+  const [Name, setName] = useState("");
   const [Email, setEmail] = useState("");
   const [Password, setPassword] = useState("");
   const [Error, setError] = useState("");
+  const [Success, setSuccess] = useState("")
 
   const handleBlurEmail = (event) => {
     setEmail(event.target.value);
@@ -27,23 +30,26 @@ function App() {
     setPassword(event.target.value);
   };
 
-  const handleChangeCheck = (event) => {
-    setRegistered(event.target.checked);
-    console.log(Registered);
+  const handleBlurName = (event) => {
+    setName(event.target.value);
   };
 
-  const handleForgotPassword = () =>{
+  const handleChangeCheck = (event) => {
+    setRegistered(event.target.checked);
+  };
+
+  const handleForgotPassword = () => {
     sendPasswordResetEmail(auth, Email)
-    .then(()=>{
-      console.log("Password reset email sent!");
-      setError("")
-    })
-    .catch((error) => {
-      const errorCode = error.code;
-      const errorMessage = error.message;
-      setError(errorMessage)
-    });
-  }
+      .then(() => {
+        setSuccess("Password reset email sent!");
+        setError("");
+      })
+      .catch((error) => {
+        const errorMessage = error.message;
+        setError(errorMessage);
+        setSuccess("")
+      });
+  };
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -57,16 +63,19 @@ function App() {
         .then((result) => {
           console.log(result.user);
           setError("");
+          setSuccess("Login Successfully Done !")
         })
         .catch((error) => {
           const errorMessage = error.message;
           setError(errorMessage);
+          setSuccess("")
         });
     } else {
       createUserWithEmailAndPassword(auth, Email, Password)
         .then((result) => {
           console.log(result.user);
-          emailVerify()
+          emailVerify();
+          updateUserProfile()
           setRegistered(true);
           setPassword("");
           setEmail("");
@@ -74,19 +83,27 @@ function App() {
         .catch((error) => {
           const errorMessage = error.message;
           setError(errorMessage);
+          setSuccess("")
         });
     }
 
     setValidated(true);
   };
 
-  const emailVerify = () =>{
-    sendEmailVerification(auth.currentUser)
-    .then(()=>{
-      console.log("Email Verification send");
+  const emailVerify = () => {
+    sendEmailVerification(auth.currentUser).then(() => {
+      setSuccess("Please check Your email for AC Confirmation");
+      setError("")
+    });
+  };
+
+  const updateUserProfile = () =>{
+    updateProfile(auth.currentUser, {
+      displayName: Name
+    }).then(()=>{
+      
     })
   }
-
 
   return (
     <div>
@@ -98,8 +115,29 @@ function App() {
           onSubmit={handleSubmit}
         >
           <Form.Label className="text-primary fs-1 fw-lighter">
+            <Form.Text>{Success}</Form.Text> <br />
             User {Registered ? "Login" : "Registration"}
           </Form.Label>
+          {Registered ? (
+            ""
+          ) : (
+            <Form.Group>
+              <Form.Label>User User Name</Form.Label>
+              <InputGroup hasValidation>
+                <InputGroup.Text id="inputGroupPrepend">@</InputGroup.Text>
+                <Form.Control
+                  onBlur={handleBlurName}
+                  type="text"
+                  placeholder="Enter User Name"
+                  required
+                />
+                <Form.Control.Feedback type="invalid">
+                  Please choose a username.
+                </Form.Control.Feedback>
+              </InputGroup>
+            </Form.Group>
+          )}
+
           <Form.Group className="mb-3" controlId="formBasicEmail">
             <Form.Label>Email address</Form.Label>
             <Form.Control
@@ -116,25 +154,6 @@ function App() {
               We'll never share your email with anyone else.
             </Form.Text>
           </Form.Group>
-
-          {Registered ? (
-            ""
-          ) : (
-            <Form.Group>
-              <Form.Label>User User Name</Form.Label>
-              <InputGroup hasValidation>
-                <InputGroup.Text id="inputGroupPrepend">@</InputGroup.Text>
-                <Form.Control
-                  type="text"
-                  placeholder="Enter User Name"
-                  required
-                />
-                <Form.Control.Feedback type="invalid">
-                  Please choose a username.
-                </Form.Control.Feedback>
-              </InputGroup>
-            </Form.Group>
-          )}
 
           <Form.Group className="mb-3" controlId="formBasicPassword">
             <Form.Label>Password</Form.Label>
@@ -157,7 +176,10 @@ function App() {
             />
           </Form.Group>
           <p className="text-danger fs-3">{Error}</p>
-          <Button variant="link" onClick={handleForgotPassword}>Forgot password</Button><br />
+          <Button variant="link" onClick={handleForgotPassword}>
+            Forgot password
+          </Button>
+          <br />
           <Button variant="primary" className="mt-2" type="submit">
             {Registered ? "Login" : "Submit"}
           </Button>
