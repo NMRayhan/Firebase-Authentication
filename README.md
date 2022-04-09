@@ -1,4 +1,4 @@
-## firebase-authentication
+# firebase-authentication
 
 # Getting Started with Create React App
 
